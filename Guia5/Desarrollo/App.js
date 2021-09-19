@@ -6,107 +6,134 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import type {Node} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, FlatList, TouchableHighlight, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
+import Cita from './src/Views/Cita';
+import Formulario from './src/Views/Formulario';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Colors from './src/utils/colors';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+export default function App() {
+  // definir el state de citas
+  const [citas, setCitas] = useState([]);
+  const [mostrarform, guardarMostrarForm] = useState(false);
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
+  useEffect(() => {
+    const obtenerCitasStorage = async () => {
+      try {
+        const citasStorage = await AsyncStorage.getItem('citas');
+        
+        if(citasStorage) {
+          setCitas(JSON.parse(citasStorage))
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    obtenerCitasStorage();
+  }, []);
+
+  // Elimina los pacientes del state
+  const eliminarPaciente = id => {
+    const citasFiltradas = citas.filter( cita => cita.id !== id );
+    setCitas( citasFiltradas );
+    guardarCitasStorage(JSON.stringify(citasFiltradas));
+  }
+
+  // Muestra u oculta el Formulario
+  const mostrarFormulario = () => {
+    guardarMostrarForm(!mostrarform);
+  }
+
+  // Ocultar el teclado
+  const cerrarTeclado = () => {
+    Keyboard.dismiss();
+  }
+  
+  // Almacenar las citas en storage
+  const guardarCitasStorage = async (citasJSON) => {
+    try {
+      await AsyncStorage.setItem('citas', citasJSON);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
+    <TouchableWithoutFeedback onPress={() => cerrarTeclado() }>
+      <View style={styles.contenedor}>
+        <Text style={styles.titulo}>Administrador de Citas</Text>
+        <View>
+          <TouchableHighlight 
+            onPress={ () => mostrarFormulario() }
+            style={styles.btnMostrarForm}>
 
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+            <Text style={styles.textoMostrarForm}> {mostrarform ? 'Cancelar Crear Cita' : 'Crear Nueva Cita'} </Text>
+          </TouchableHighlight>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        <View style={styles.contenido}>
+          { mostrarform ? (
+            <>
+              <Text style={styles.titulo}>Crear Nueva Cita</Text>
+              <Formulario
+                citas={citas}
+                setCitas={setCitas}
+                guardarMostrarForm={guardarMostrarForm}
+                guardarCitasStorage={guardarCitasStorage}
+              />
+            </>
+          ) : 
+            (
+              <>
+                <Text style={styles.titulo}> {citas.length > 0 ? 'Administra tus citas' : 'No hay citas, agrega una'} </Text>
+                <FlatList
+                  style={styles.listado}
+                  data={citas}
+                  renderItem={ ({item}) => 
+                    <Cita item={item}
+                      eliminarPaciente={eliminarPaciente} /> }
+                      keyExtractor={ cita => cita.id}
+                    />
+              </>
+            )         
+          }
+        </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  contenedor: {
+    backgroundColor: Colors.PRIMARY_COLOR,
+    flex: 1
   },
-  sectionTitle: {
+  titulo: {
+    color: '#FFF',
+    marginTop: Platform.OS === 'ios' ? 40 : 20 ,
+    marginBottom: 20,
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    textAlign: 'center'
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  contenido: {
+    flex: 1,
+    marginHorizontal: '2.5%',
   },
-  highlight: {
-    fontWeight: '700',
+  listado: {
+    flex: 1,
   },
+  btnMostrarForm: {
+    padding: 10,
+    backgroundColor:Colors.BUTTON_COLOR,
+    marginVertical: 10
+  },
+  textoMostrarForm: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    textAlign: 'center'
+  }
 });
-
-export default App;
