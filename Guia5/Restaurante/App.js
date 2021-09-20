@@ -4,19 +4,10 @@
  *
  * @format
  * @flow strict-local
- */
+*/
 
-import React from 'react';
-import type {Node} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import React, { useState, useEffect} from 'react';
+import { StyleSheet, useColorScheme, Button, Text } from 'react-native';
 
 import {
   Colors,
@@ -26,86 +17,98 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import List from './src/Views/List';
+import Form from './src/Views/Form';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const App: () => Node = () => {
+const Stack = createStackNavigator();
+
+const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
+  // definir el state de citas
+  const [list, setList] = useState([]);
+
+  useEffect(() => {
+    const getListStorage = async () => {
+      try {
+        const listStorage = await AsyncStorage.getItem('registration');
+        console.log(listStorage);
+        if(listStorage) {
+          setList(JSON.parse(listStorage))
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    getListStorage();
+  }, []);
+
+  const saveRegistrationStorage = async (json) => {
+    try {
+      await AsyncStorage.setItem('registration', json);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const deleteRegistration = id => {
+    const filterList = list.filter( cita => cita.id !== id );
+    setList( filterList );
+    saveRegistrationStorage(JSON.stringify(filterList));
+  }
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="List"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: isDarkMode ? '#0C2D48' : '#0C2D48',
+          },
+          headerTintColor: isDarkMode ? '#fff' : '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          }
+        }}
+      >
+
+        <Stack.Screen name="List" 
+          options={({ navigation, route }) => ({
+            headerTitle: <Text>Lista</Text>,
+            headerRight: () => (
+              <Button
+                onPress={() => {
+                  navigation.navigate('Form', { list: list, setList: setList, saveRegistrationStorage: saveRegistrationStorage });
+                }}
+                title="Agregar registro"
+                color="#fff"
+              />
+            ),
+          })}
+          // initialParams={{ list: list, setList: setList, deleteRegistration: deleteRegistration }}
+        >
+          {props => <List {...props} list={list} setList={setList} deleteRegistration={deleteRegistration}></List>}
+        </Stack.Screen>
+        <Stack.Screen 
+          name="Form" 
+          options={{ title: 'Registrar' }} 
+          component={Form} 
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  container: {
+    flex: 1,
   },
 });
 
