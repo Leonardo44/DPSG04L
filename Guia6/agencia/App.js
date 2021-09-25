@@ -31,7 +31,7 @@ const App = () => {
         <View style={{ flexDirection: 'row' }}>
           <Image
             style={styles.banner}
-            source={require('./src/img/bg.jpg')}
+            source={require('./src/img/1.jpeg')}
           />
         </View>
 
@@ -67,7 +67,7 @@ const App = () => {
             <View>
               <Image
                 style={styles.ciudad}
-                source={require('./src/img/1.jpg')}
+                source={require('./src/img/1.jpeg')}
               />
             </View>
           </ScrollView>

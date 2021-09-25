@@ -76,7 +76,7 @@ const App = () => {
           <View style={styles.roomItemList}>
             <Image
               style={styles.images}
-              source={require('./src/img/4.jpg')}
+              source={require('./src/img/4.jpeg')}
             />
             <Text style={styles.imageTitle}>King guest room</Text>
           </View>
@@ -92,7 +92,7 @@ const App = () => {
           <View style={styles.roomItemList}>
             <Image
               style={styles.images}
-              source={require('./src/img/9.png')}
+              source={require('./src/img/9.jpeg')}
             />
             <Text style={styles.imageTitle}>Presidential suite</Text>
           </View>
@@ -210,3 +210,5 @@ const styles = StyleSheet.create({
     flexBasis: '49%'
   }
 });
+
+export default App;
